@@ -18,6 +18,7 @@ data class Items(
 
 data class Manga(
     val mal_id: Int,
+    val id: Int,
     val url: String,
     val title: String,
     val synopsis: String?,

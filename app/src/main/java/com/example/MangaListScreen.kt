@@ -32,13 +32,40 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
-import androidx.hilt.navigation.compose.hiltViewModel as hiltViewModel1
+import com.example.manga.MangaDetailScreen
 
 // MangaListScreen.kt
+
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.remember
+import androidx.hilt.navigation.compose.hiltViewModel
+
+@Composable
+fun Manga() {
+    val navController = rememberNavController()
+
+    NavHost(navController = navController, startDestination = "mangaList") {
+        composable("mangaList") {
+            MangaListScreen(navController)
+        }
+        composable("mangaDetail/{mangaId}") { backStackEntry ->
+            val mangaId = remember { backStackEntry.arguments?.getString("mangaId") }
+            MangaDetailScreen(mangaId = mangaId?.toIntOrNull(), navController = navController)
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MangaListScreen(viewModel: MangaViewModel = hiltViewModel1()) {
+fun MangaListScreen(navController: NavController, viewModel: MangaViewModel = hiltViewModel()) {
     val mangaList by viewModel.mangaList
 
     Scaffold(
@@ -58,18 +85,22 @@ fun MangaListScreen(viewModel: MangaViewModel = hiltViewModel1()) {
                 .padding(innerPadding)
         ) {
             items(mangaList) { manga ->
-                MangaCard(manga)
+                MangaCard(
+                    manga = manga,
+                    onItemClick = { navController.navigate("mangaDetail/${manga.id}") }
+                )
             }
         }
     }
 }
 
 @Composable
-fun MangaCard(manga: Manga) {
+fun MangaCard(manga: Manga, onItemClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(8.dp)
+            .clickable(onClick = onItemClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Row(modifier = Modifier.padding(16.dp)) {
@@ -122,3 +153,4 @@ fun MangaCard(manga: Manga) {
         }
     }
 }
+

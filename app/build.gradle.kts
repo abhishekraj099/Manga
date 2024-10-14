@@ -106,4 +106,6 @@ dependencies {
     implementation (libs.converter.gson)
     implementation(libs.okhttp)
     implementation(libs.androidx.material.icons.extended)
+
+    implementation ("androidx.navigation:navigation-compose:2.7.1")
 }

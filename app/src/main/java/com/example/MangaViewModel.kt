@@ -8,7 +8,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// MangaViewModel.kt
 @HiltViewModel
 class MangaViewModel @Inject constructor(
     private val getTopMangaUseCase: GetTopMangaUseCase
@@ -31,4 +30,10 @@ class MangaViewModel @Inject constructor(
             }
         }
     }
+
+    // Function to get Manga by ID
+    fun getMangaById(mangaId: Int?): Manga? {
+        return _mangaList.value.find { it.id == mangaId }
+    }
 }
+

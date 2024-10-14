@@ -11,6 +11,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.Manga
+import com.example.MangaApp
 import com.example.MangaListScreen
 import com.example.manga.ui.theme.MangaTheme
 
@@ -27,7 +29,7 @@ class MainActivity : ComponentActivity() {
 
                 Scaffold { innerPadding ->
 
-                    MangaListScreen()
+                    Manga()
                 }
             }
         }
