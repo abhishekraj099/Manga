@@ -20,6 +20,7 @@ class MangaViewModel @Inject constructor(
     private val getTopMangaUseCase: GetTopMangaUseCase
 ) : ViewModel() {
 
+    var currentPage = 1 // Add current page state
     private val _mangaListState = MutableStateFlow<MangaListState>(MangaListState.Loading)
     val mangaListState: StateFlow<MangaListState> = _mangaListState.asStateFlow()
 
@@ -27,25 +28,38 @@ class MangaViewModel @Inject constructor(
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
     init {
-        fetchTopManga()
+        fetchTopManga(currentPage)
     }
 
-    fun fetchTopManga() {
-        viewModelScope.launch {
+    fun fetchTopManga(page: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
             _mangaListState.value = MangaListState.Loading
             try {
-                val topManga = getTopMangaUseCase()
+                val topManga = getTopMangaUseCase.invoke(page) // Modify use case to accept page
                 _mangaListState.value = MangaListState.Success(topManga)
             } catch (e: Exception) {
+                Log.e("MangaViewModel", "Error fetching top manga: ${e.message}", e)
                 _mangaListState.value = MangaListState.Error("Failed to load manga: ${e.message}")
             }
         }
     }
 
+    fun nextPage() {
+        currentPage++
+        fetchTopManga(currentPage)
+    }
+
+    fun previousPage() {
+        if (currentPage > 1) {
+            currentPage--
+            fetchTopManga(currentPage)
+        }
+    }
+
     fun refreshMangaList() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _isRefreshing.value = true
-            fetchTopManga()
+            fetchTopManga(currentPage)
             _isRefreshing.value = false
         }
     }
@@ -57,6 +71,7 @@ class MangaViewModel @Inject constructor(
         }
     }
 }
+
 
 sealed class MangaListState {
     object Loading : MangaListState()

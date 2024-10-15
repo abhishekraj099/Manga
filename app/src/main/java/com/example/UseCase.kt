@@ -6,7 +6,7 @@ import javax.inject.Inject
 class GetTopMangaUseCase @Inject constructor(
     private val repository: MangaRepository
 ) {
-    suspend operator fun invoke(): List<Manga> {
+    suspend operator fun invoke(page: kotlin.Int): List<Manga> {
         return repository.getTopManga()
     }
 }

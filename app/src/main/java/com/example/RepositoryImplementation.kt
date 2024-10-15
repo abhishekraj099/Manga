@@ -1,31 +1,62 @@
 package com.example
 
+
+
+
+import kotlinx.coroutines.delay
+
+import kotlinx.coroutines.delay
+import retrofit2.HttpException
 import javax.inject.Inject
+
 
 
 class MangaRepositoryImpl @Inject constructor(
     private val api: MangaApi
 ) : MangaRepository {
 
-    override suspend fun getTopManga(): List<Manga> {
-        val response: MangaResponse = api.getTopManga()
+    private val mangaList = mutableListOf<Manga>()
+    private var currentPage = 1
 
-        // Since `Manga` and `MangaResponse.data` structure are identical, you can directly return the list
-        return response.data.map { mangaData ->
-            Manga(
-                mal_id = mangaData.mal_id,
-                id = mangaData.id,
-                url = mangaData.url,
-                title = mangaData.title,
-                synopsis = mangaData.synopsis,
-                score = mangaData.score,
-                members = mangaData.members,
-                images = mangaData.images,
-                genres = mangaData.genres,
-                authors = mangaData.authors,
-                cast = mangaData.cast // `cast` will be included if present in the API response
-            )
+    override suspend fun getTopManga(): List<Manga> {
+        while (mangaList.size < 100) { // Continue fetching until we have at least 100 items
+            try {
+                delay(1000) // Initial delay
+
+                // Fetch the manga data for the current page
+                val response: MangaResponse = api.getTopManga(page = currentPage)
+
+                // Append new manga to the existing list
+                mangaList.addAll(response.data)
+
+                // Check if there is a next page
+                if (!response.pagination.has_next_page) {
+                    break // No more pages, exit the loop
+                }
+
+                // Increment the current page
+                currentPage++
+            } catch (e: HttpException) {
+                if (e.code() == 429) {
+                    // Handle HTTP 429 Too Many Requests
+                    delay(5000) // Wait for 5 seconds before retrying
+                } else {
+                    throw e // Rethrow other exceptions
+                }
+            }
         }
+
+        // Return the mangaList (it may have more than 50 items now)
+        return mangaList
+    }
+
+    fun resetPagination() {
+        currentPage = 1
+        mangaList.clear()
     }
 }
+
+
+
+
 

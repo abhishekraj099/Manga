@@ -28,8 +28,8 @@ class MainActivity : ComponentActivity() {
             MangaTheme {
 
                 Scaffold { innerPadding ->
-
                     Manga()
+
                 }
             }
         }
