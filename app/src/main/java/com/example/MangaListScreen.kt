@@ -77,8 +77,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
+import kotlinx.coroutines.delay
 
 import kotlinx.coroutines.launch
 
@@ -97,6 +104,7 @@ fun Manga() {
     }
 }
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MangaListScreen(navController: NavController, viewModel: MangaViewModel = hiltViewModel()) {
@@ -111,9 +119,9 @@ fun MangaListScreen(navController: NavController, viewModel: MangaViewModel = hi
     }
 
     val gradientColors = listOf(
-        Color(0xFFFF9A8B),
-        Color(0xFFFF6B6B),
-        Color(0xFFFCA3CC)
+        Color(0xFF1A237E),  // Deep Blue
+        Color(0xFF3F51B5),  // Indigo
+        Color(0xFF7986CB)   // Light Indigo
     )
 
     Scaffold(
@@ -134,7 +142,8 @@ fun MangaListScreen(navController: NavController, viewModel: MangaViewModel = hi
                     lazyListState.animateScrollToItem(0)
                 }
             }
-        }
+        },
+        floatingActionButtonPosition = FabPosition.End
     ) { innerPadding ->
         SwipeRefresh(
             state = swipeRefreshState,
@@ -153,28 +162,65 @@ fun MangaListScreen(navController: NavController, viewModel: MangaViewModel = hi
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EnhancedTopAppBar(title: String, showTitle: Boolean, onRefresh: () -> Unit, gradientColors: List<Color>) {
+    TopAppBar(
+        title = {
+            Text(
+                text = title,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .graphicsLayer(
+                        scaleX = if (showTitle) 1.2f else 1f,
+                        scaleY = if (showTitle) 1.2f else 1f,
+                        alpha = if (showTitle) 1f else 0.7f
+                    )
+                    .animateContentSize()
+            )
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.Transparent
+        ),
+        actions = {
+            IconButton(onClick = onRefresh) {
+                Icon(
+                    Icons.Filled.Refresh,
+                    contentDescription = "Refresh",
+                    tint = Color.White
+                )
+            }
+        },
+        modifier = Modifier.background(Brush.horizontalGradient(gradientColors))
+    )
+}
+
 @Composable
 fun LoadingView() {
-    Box(modifier = Modifier.fillMaxSize()) {
-        val infiniteTransition = rememberInfiniteTransition()
-        val angle by infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 360f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(2000, easing = LinearEasing)
-            )
-        )
-
-        Icon(
-            imageVector = Icons.Default.Refresh,
-            contentDescription = "Loading",
-            modifier = Modifier
-                .size(100.dp)
-                .rotate(angle)
-                .align(Alignment.Center),
-            tint = Color.White
-        )
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center // Align content to the center
+    ) {
+        LottieLoadingAnimation()
     }
+}
+
+
+@Composable
+fun LottieLoadingAnimation() {
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.animationlottie))
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = LottieConstants.IterateForever,
+        isPlaying = true
+    )
+
+    LottieAnimation(
+        composition = composition,
+        progress = { progress },
+        modifier = Modifier.size(100.dp)
+    )
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -190,13 +236,7 @@ fun MangaList(mangaList: List<Manga>, navController: NavController, lazyListStat
                 manga = manga,
                 onItemClick = { navController.navigate("mangaDetail/${manga.id}") },
                 modifier = Modifier
-                    .animateItemPlacement(
-                        animationSpec = tween(durationMillis = 500)
-                    )
-                    .graphicsLayer(
-                        scaleX = 0.9f,
-                        scaleY = 0.9f
-                    )
+                    .animateItemPlacement()
                     .animateContentSize()
             )
         }
@@ -207,72 +247,79 @@ fun MangaList(mangaList: List<Manga>, navController: NavController, lazyListStat
 @Composable
 fun EnhancedMangaCard(manga: Manga, onItemClick: () -> Unit, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
-    val rotationState = remember { Animatable(0f) }
-    val scaleState = remember { Animatable(1f) }
-
-    LaunchedEffect(expanded) {
-        rotationState.animateTo(
-            targetValue = if (expanded) 5f else 0f,
-            animationSpec = spring(stiffness = Spring.StiffnessLow)
-        )
-        scaleState.animateTo(
-            targetValue = if (expanded) 1.05f else 1f,
-            animationSpec = spring(stiffness = Spring.StiffnessLow)
-        )
-    }
 
     Card(
         onClick = {
             expanded = !expanded
             if (!expanded) onItemClick()
         },
-        modifier = modifier
-            .graphicsLayer(
-                rotationZ = rotationState.value,
-                scaleX = scaleState.value,
-                scaleY = scaleState.value
-            ),
+        modifier = modifier,
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.8f))
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f))
     ) {
-        Row(modifier = Modifier.height(IntrinsicSize.Min)) {
-            AsyncImage(
-                model = manga.images.jpg.image_url,
-                contentDescription = "${manga.title} cover",
+        Column {
+            Box(
                 modifier = Modifier
-                    .width(120.dp)
-                    .fillMaxHeight()
-                    .clip(RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp)),
-                contentScale = ContentScale.Crop
-            )
-            Column(
-                modifier = Modifier
-                    .padding(16.dp)
                     .fillMaxWidth()
+                    .height(200.dp)
             ) {
+                AsyncImage(
+                    model = manga.images.jpg.large_image_url,
+                    contentDescription = "${manga.title} cover",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f)),
+                                startY = 100f
+                            )
+                        )
+                )
                 Text(
                     text = manga.title,
-                    fontSize = 18.sp,
+                    color = Color.White,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    color = Color.Black
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(16.dp)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 MangaRating(score = manga.score)
-                Spacer(modifier = Modifier.height(8.dp))
                 MangaGenres(genres = manga.genres)
-                Spacer(modifier = Modifier.height(12.dp))
-                if (expanded) {
-                    manga.synopsis?.let {
-                        Text(
-                            text = it,
-                            fontSize = 14.sp,
-                            color = Color.Black.copy(alpha = 0.7f),
-                            modifier = Modifier.animateContentSize()
-                        )
-                    }
+            }
+            AnimatedVisibility(visible = expanded) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Synopsis",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = manga.synopsis ?: "No synopsis available",
+                        fontSize = 14.sp,
+                        color = Color.Black.copy(alpha = 0.7f),
+                        maxLines = if (expanded) Int.MAX_VALUE else 3,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
         }
@@ -281,34 +328,20 @@ fun EnhancedMangaCard(manga: Manga, onItemClick: () -> Unit, modifier: Modifier 
 
 @Composable
 fun MangaRating(score: Float?) {
-    score?.let {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            val starRotation = remember { Animatable(0f) }
-            LaunchedEffect(Unit) {
-                starRotation.animateTo(
-                    targetValue = 360f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(2000, easing = LinearEasing),
-                        repeatMode = RepeatMode.Restart
-                    )
-                )
-            }
-            Icon(
-                imageVector = Icons.Filled.Star,
-                contentDescription = "Score",
-                tint = Color(0xFFFFC107),
-                modifier = Modifier
-                    .size(24.dp)
-                    .rotate(starRotation.value)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = String.format("%.2f", it),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFFFFC107)
-            )
-        }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = Icons.Filled.Star,
+            contentDescription = "Score",
+            tint = Color(0xFFFFC107),
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = score?.let { String.format("%.2f", it) } ?: "N/A",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFFFFC107)
+        )
     }
 }
 
@@ -319,103 +352,45 @@ fun MangaGenres(genres: List<Genre>) {
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         genres.take(3).forEach { genre ->
-            val bounceState = remember { Animatable(1f) }
-            LaunchedEffect(Unit) {
-                bounceState.animateTo(
-                    targetValue = 1.1f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(500, easing = LinearEasing),
-                        repeatMode = RepeatMode.Reverse
-                    )
-                )
-            }
             Chip(
                 onClick = { /* TODO: Filter by genre */ },
                 colors = ChipDefaults.chipColors(
                     backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                 ),
-                label = { Text(genre.name, fontSize = 12.sp) },
-                modifier = Modifier.scale(bounceState.value)
+                label = { Text(genre.name, fontSize = 12.sp) }
             )
         }
     }
 }
 
-
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun EnhancedTopAppBar(title: String, showTitle: Boolean, onRefresh: () -> Unit, gradientColors: List<Color>) {
-    TopAppBar(
-        title = {
-            AnimatedVisibility(
-                visible = showTitle,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                Text(
-                    text = title,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.graphicsLayer(
-                        scaleX = 1.2f,
-                        scaleY = 1.2f
-                    )
-                )
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color.Transparent
-        ),
-        actions = {
-            IconButton(onClick = onRefresh) {
-                val rotationState = remember { Animatable(0f) }
-                LaunchedEffect(Unit) {
-                    rotationState.animateTo(
-                        targetValue = 360f,
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(2000, easing = LinearEasing)
-                        )
-                    )
-                }
-                Icon(
-                    Icons.Filled.Refresh,
-                    contentDescription = "Refresh",
-                    tint = Color.White,
-                    modifier = Modifier.rotate(rotationState.value)
-                )
-            }
-        },
-        modifier = Modifier.background(Brush.horizontalGradient(gradientColors))
-    )
-}
-
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun EnhancedBottomNavigationBar(viewModel: MangaViewModel, gradientColors: List<Color>) {
-    AnimatedVisibility(
-        visible = true,
-        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+    BottomAppBar(
+        modifier = Modifier.background(Brush.horizontalGradient(gradientColors)),
+        containerColor = Color.Transparent
     ) {
-        BottomAppBar(
-            modifier = Modifier.background(Brush.horizontalGradient(gradientColors)),
-            containerColor = Color.Transparent
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                FunkyNavigationButton(
-                    icon = Icons.Filled.KeyboardArrowLeft,
-                    text = "Prev",
-                    onClick = { viewModel.previousPage() },
-                    enabled = viewModel.currentPage > 1
-                )
+            FunkyNavigationButton(
+                icon = Icons.Filled.KeyboardArrowLeft,
+                text = "Prev",
+                onClick = { viewModel.previousPage() },
+                enabled = viewModel.currentPage > 1
+            )
+            AnimatedContent(
+                targetState = viewModel.currentPage,
+                transitionSpec = {
+                    slideInVertically { height -> height } + fadeIn() with
+                            slideOutVertically { height -> -height } + fadeOut()
+                }
+            ) { page ->
                 Text(
-                    "Page ${viewModel.currentPage}",
+                    "Page $page",
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.graphicsLayer(
@@ -423,12 +398,12 @@ fun EnhancedBottomNavigationBar(viewModel: MangaViewModel, gradientColors: List<
                         scaleY = 1.2f
                     )
                 )
-                FunkyNavigationButton(
-                    icon = Icons.Filled.KeyboardArrowRight,
-                    text = "Next",
-                    onClick = { viewModel.nextPage() }
-                )
             }
+            FunkyNavigationButton(
+                icon = Icons.Filled.KeyboardArrowRight,
+                text = "Next",
+                onClick = { viewModel.nextPage() }
+            )
         }
     }
 }
@@ -440,17 +415,6 @@ fun FunkyNavigationButton(
     onClick: () -> Unit,
     enabled: Boolean = true
 ) {
-    val bounceState = remember { Animatable(1f) }
-    LaunchedEffect(Unit) {
-        bounceState.animateTo(
-            targetValue = 1.1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(500, easing = LinearEasing),
-                repeatMode = RepeatMode.Reverse
-            )
-        )
-    }
-
     Button(
         onClick = onClick,
         enabled = enabled,
@@ -458,7 +422,7 @@ fun FunkyNavigationButton(
             containerColor = Color.White.copy(alpha = 0.2f),
             contentColor = Color.White
         ),
-        modifier = Modifier.scale(bounceState.value)
+        shape = RoundedCornerShape(20.dp)
     ) {
         Icon(icon, contentDescription = text)
         Spacer(Modifier.width(4.dp))
@@ -468,21 +432,18 @@ fun FunkyNavigationButton(
 
 @Composable
 fun BouncingFAB(onClick: () -> Unit) {
-    val bounceState = remember { Animatable(1f) }
+    val scale = remember { Animatable(1f) }
     LaunchedEffect(Unit) {
-        bounceState.animateTo(
-            targetValue = 1.2f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(500, easing = LinearEasing),
-                repeatMode = RepeatMode.Reverse
-            )
-        )
+        while (true) {
+            scale.animateTo(1.2f, animationSpec = tween(300))
+            scale.animateTo(1f, animationSpec = tween(300))
+            delay(1000)
+        }
     }
-
     FloatingActionButton(
         onClick = onClick,
         containerColor = MaterialTheme.colorScheme.secondary,
-        modifier = Modifier.scale(bounceState.value)
+        modifier = Modifier.scale(scale.value)
     ) {
         Icon(Icons.Filled.KeyboardArrowUp, "Scroll to top")
     }
@@ -491,9 +452,30 @@ fun BouncingFAB(onClick: () -> Unit) {
 @Composable
 fun ErrorView(message: String, onRetry: () -> Unit) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center){}
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = Icons.Default.Warning,
+            contentDescription = "Error",
+            tint = Color.Red,
+            modifier = Modifier.size(64.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = message,
+            color = Color.White,
+            fontSize = 18.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 32.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(
+            onClick = onRetry,
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+        ) {
+            Text("Retry")
+        }
+    }
 }
