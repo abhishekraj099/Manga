@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -109,6 +111,38 @@ fun MangaDetailScreen(mangaId: Int?, navController: NavController, viewModel: Ma
                             fontSize = 14.sp
                         )
                     }
+                }
+
+                // Cast section
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Cast",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    manga.cast?.let { castMembers ->
+                        castMembers.forEach { castMember ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                AsyncImage(
+                                    model = castMember.image_url,
+                                    contentDescription = "${castMember.name} image",
+                                    modifier = Modifier
+                                        .size(64.dp)
+                                        .clip(MaterialTheme.shapes.small),
+                                    contentScale = ContentScale.Crop
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = castMember.name,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    } ?: Text("No cast information available")
                 }
             }
         } else {

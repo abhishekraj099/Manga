@@ -45,8 +45,17 @@ import com.example.manga.MangaDetailScreen
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.request.ImageRequest
+import com.example.manga.R
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+
 
 @Composable
 fun Manga() {
@@ -63,10 +72,19 @@ fun Manga() {
     }
 }
 
+
+
+
+
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MangaListScreen(navController: NavController, viewModel: MangaViewModel = hiltViewModel()) {
-    val mangaList by viewModel.mangaList
+    val mangaListState by viewModel.mangaListState.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
+
+    val swipeRefreshState = rememberSwipeRefreshState(isRefreshing = isRefreshing)
 
     Scaffold(
         topBar = {
@@ -79,17 +97,51 @@ fun MangaListScreen(navController: NavController, viewModel: MangaViewModel = hi
             )
         }
     ) { innerPadding ->
-        LazyColumn(
+        SwipeRefresh(
+            state = swipeRefreshState,
+            onRefresh = { viewModel.refreshMangaList() },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            items(mangaList) { manga ->
-                MangaCard(
-                    manga = manga,
-                    onItemClick = { navController.navigate("mangaDetail/${manga.id}") }
-                )
+            when (val state = mangaListState) {
+                is MangaListState.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    }
+                }
+                is MangaListState.Success -> {
+                    LazyColumn {
+                        items(state.data) { manga ->
+                            MangaCard(
+                                manga = manga,
+                                onItemClick = { navController.navigate("mangaDetail/${manga.id}") }
+                            )
+                        }
+                    }
+                }
+                is MangaListState.Error -> {
+                    ErrorView(
+                        message = state.message,
+                        onRetry = { viewModel.fetchTopManga() }
+                    )
+                }
             }
+        }
+    }
+}
+
+@Composable
+fun ErrorView(message: String, onRetry: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = message, color = MaterialTheme.colorScheme.error)
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(onClick = onRetry) {
+            Text("Retry")
         }
     }
 }
@@ -105,19 +157,25 @@ fun MangaCard(manga: Manga, onItemClick: () -> Unit) {
     ) {
         Row(modifier = Modifier.padding(16.dp)) {
             AsyncImage(
-                model = manga.images.jpg.image_url,
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(manga.images.jpg.image_url)
+                    .crossfade(true)
+                    .build(),
                 contentDescription = "${manga.title} cover",
                 modifier = Modifier
                     .size(100.dp, 150.dp)
                     .clip(MaterialTheme.shapes.medium),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(android.R.drawable.ic_menu_report_image)
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column {
                 Text(
                     text = manga.title,
                     fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 manga.score?.let {
@@ -153,4 +211,5 @@ fun MangaCard(manga: Manga, onItemClick: () -> Unit) {
         }
     }
 }
+
 

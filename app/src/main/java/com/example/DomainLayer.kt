@@ -3,6 +3,8 @@ package com.example
 
 
 
+
+
 data class Pagination(
     val last_visible_page: Int,
     val has_next_page: Boolean,
@@ -26,7 +28,8 @@ data class Manga(
     val members: Int,
     val images: Images,
     val genres: List<Genre>,
-    val authors: List<Author>
+    val authors: List<Author>,
+    val cast: List<CastMember>? // Updated to include cast members
 )
 
 data class Images(
@@ -55,3 +58,15 @@ data class MangaResponse(
     val data: List<Manga>
 )
 
+// CastMember now includes role and voice actors
+data class CastMember(
+    val name: String,
+    val image_url: String, // Cast image URL
+    val role: String?, // Role in the anime/manga (e.g., main, supporting)
+    val voice_actors: List<VoiceActor>? // List of voice actors with language
+)
+
+data class VoiceActor(
+    val name: String,
+    val language: String
+)
