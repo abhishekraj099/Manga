@@ -119,9 +119,9 @@ fun MangaListScreen(navController: NavController, viewModel: MangaViewModel = hi
     }
 
     val gradientColors = listOf(
-        Color(0xFF1A237E),  // Deep Blue
-        Color(0xFF3F51B5),  // Indigo
-        Color(0xFF7986CB)   // Light Indigo
+        Color(0xFF051F45),  // Dark Blue
+        Color(0xFF2A3E66),  // Medium Blue
+        Color(0xFF4A6A8A)   // Lighter Blue
     )
 
     Scaffold(
@@ -256,7 +256,7 @@ fun EnhancedMangaCard(manga: Manga, onItemClick: () -> Unit, modifier: Modifier 
         modifier = modifier,
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f))
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF2A59CE)) // Update to the specified color
     ) {
         Column {
             Box(
@@ -310,13 +310,13 @@ fun EnhancedMangaCard(manga: Manga, onItemClick: () -> Unit, modifier: Modifier 
                         text = "Synopsis",
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp,
-                        color = Color.Black
+                        color = Color.White // Change synopsis title color for better contrast
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = manga.synopsis ?: "No synopsis available",
                         fontSize = 14.sp,
-                        color = Color.Black.copy(alpha = 0.7f),
+                        color = Color.White.copy(alpha = 0.8f), // Update synopsis text color
                         maxLines = if (expanded) Int.MAX_VALUE else 3,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -325,6 +325,8 @@ fun EnhancedMangaCard(manga: Manga, onItemClick: () -> Unit, modifier: Modifier 
         }
     }
 }
+
+
 
 @Composable
 fun MangaRating(score: Float?) {
